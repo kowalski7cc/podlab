@@ -2,14 +2,14 @@
 
 set -e
 
-. defaults
+. config
 
 if ! [ -x "$(command -v buildah)" ]; then
     echo "buildah is not installed" >&2
     exit 1
 fi
 
-if ! [ -x "$(ssh-keygen -v buildah)" ]; then
+if ! [ -x "$(command -v ssh-keygen)" ]; then
     echo "ssh-keygen is not installed" >&2
     exit 1
 fi
@@ -25,10 +25,10 @@ fi
 
 BUILDER=$(buildah from $BASE_IMAGE)
 buildah run $BUILDER dnf -y install basesystem bash systemd openssh-server passwd sudo python3 yum dnf findutils iproute NetworkManager iputils
-buildah run $BUILDER useradd ansible -mG wheel
-buildah add --chown ansible:ansible --chmod 600 $BUILDER $SSH_KEY.pub /home/ansible/.ssh/authorized_keys
+buildah run $BUILDER useradd ansible -rmG wheel
+buildah add --chown ansible:ansible --chmod 600 $BUILDER $KEY_PATH.pub /home/ansible/.ssh/authorized_keys
 buildah run $BUILDER sh -c 'echo -e "ansible ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers.d/ansible'
 buildah run $BUILDER useradd redhat -G wheel -p '$6$CoPu5pQehb0vQnWN$39y.7JoLr5A1no/jvjAsRGrBrYUufd43JVZiCPe8cHkz3M.ebOarMl/kc2QV3.sA8z7.4UvMzyJwCXcx7NYfz0'
 buildah run $BUILDER sh -c "echo -e PermitRootLogin yes >> /etc/ssh/sshd_config"
 buildah commit $BUILDER ansible-lab:base
-#buildah rm $BUILDER
+buildah rm $BUILDER

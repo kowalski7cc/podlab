@@ -1,6 +1,80 @@
 #!/usr/bin/env python3
 
+import argparse
+import json
 import subprocess
 
-p = subprocess.run(["podman", "ps"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-print(p)
+UNGROUPED = "ungrouped"
+NETWORK = "ansible-lab"
+LABEL = "org.ansible-lab.group"
+
+
+def get_pods():
+    pr = subprocess.run(
+        [
+            "podman",
+            "ps",
+            "--format",
+            "{{.ID}}",
+            "--filter",
+            f"label={LABEL}",
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+    if pr.returncode != 0:
+        raise RuntimeError(pr.stdout)
+    return pr.stdout.decode().splitlines()
+
+
+def inspect_pod(hashes):
+    if not hashes:
+        return []
+    pr = subprocess.run(
+        ["podman", "inspect", "--format", "json"] + hashes
+        if isinstance(hashes, list)
+        else [hashes],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+    if pr.returncode != 0:
+        raise RuntimeError(pr.stdout)
+    pods = json.loads(pr.stdout)
+    return pods
+
+
+def get_list(pods):
+    # "Labels" "org.ansible-lab.group"
+    groups = {}
+    for p in pods:
+        g: str = p["Config"]["Labels"].get(LABEL, UNGROUPED)
+        if g not in groups:
+            groups[g] = {"hosts": [], "vars": {}, "children": []}
+        groups[g]["hosts"].append(
+            p["NetworkSettings"]["Networks"].get(NETWORK, {}).get("IPAddress", None)
+        )
+    return groups
+
+
+def get_host(pod):
+    return "{}"
+
+
+def main():
+    parser = argparse.ArgumentParser("Podman Inventory Module")
+    parser.add_argument("--list", action="store_true", help="List active pods")
+    parser.add_argument("--host", help="Details about a specific pod")
+    args = parser.parse_args()
+
+    if args.host:
+        print(get_host(args.host))
+    if args.list:
+        print(json.dumps(get_list(inspect_pod(get_pods()))))
+
+
+if __name__ == "__main__":
+    main()

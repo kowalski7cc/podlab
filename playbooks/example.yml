@@ -1,0 +1,9 @@
+---
+- name: Example Playbook
+  hosts: all
+  tasks:
+    - name: Hello World
+      debug:
+        msg: "Hello World!"
+    - name: Ping
+      ping:

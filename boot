@@ -10,7 +10,7 @@ fi
 
 NETWORK="ansible-lab"
 
-POD=$(podman run --privileged -tid --label "org.ansible-lab.group=$GROUP" --rm --name ansible-${GROUP}-new --network $NETWORK --tmpfs /tmp --tmpfs /run ansible-lab:base /sbin/init)
+POD=$(podman run --privileged -tid --label "org.ansible-lab.version=1" --label "org.ansible-lab.group=$GROUP" --rm --name ansible-${GROUP}-new --network $NETWORK --tmpfs /tmp --tmpfs /run ansible-lab:base /sbin/init)
 podman rename $POD ansible-${GROUP}-${POD::12}
 #podman attach $POD
 echo $POD

@@ -2,6 +2,6 @@
 BASE_IMAGE="quay.io/centos/centos:stream9"
 #BASE_IMAGE="fedora"
 
-SSH_KEY_NAME="ed25519"
+SSH_KEY_NAME="ansible_ed25519"
 SSH_KEY_TYPE="ed25519"
 SSH_PATH="ssh"

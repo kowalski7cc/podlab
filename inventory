@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+
+import subprocess
+
+p = subprocess.run(["podman", "ps"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+print(p)

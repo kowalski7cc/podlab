@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+podman unshare --rootless-cni ssh -o UserKnownHostsFile=keys/known_hosts $@ # -i keys/ansible_ed25519 -o User=ansible  $@

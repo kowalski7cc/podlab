@@ -1,0 +1,31 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run expample playbook",
+            "type": "shell",
+            "command": "cd ${workspaceFolder}; ansible-playbook ./playbooks/example.yml",
+            "problemMatcher": []
+        },
+        {
+            "label": "Boot a pod",
+            "type": "shell",
+            "command": "cd ${workspaceFolder}; ./boot ${input:group}",
+            "problemMatcher": []
+        },
+        {
+            "label": "Environment setup",
+            "type": "shell",
+            "command": "cd ${workspaceFolder}; ./setup",
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "group",
+            "description": "Pod group",
+            "default": "none",
+            "type": "promptString"
+        },
+    ]
+}

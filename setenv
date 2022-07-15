@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+
+NAME="ansible-lab"
+VERSION="0.1.0"
+LABEL="org.$NAME"
+IMAGE_NAME="$NAME:$VERSION"
+NETWORK="$NAME"
+
+BASE_IMAGE="quay.io/centos/centos:stream9"
+#BASE_IMAGE="fedora"
+
+SSH_KEY_NAME="ansible_ed25519"
+SSH_KEY_TYPE="ed25519"
+SSH_PATH="ssh"
+
+STUDENT_USERNAME='redhat'
+STUDENT_PASSWORD='$6$CoPu5pQehb0vQnWN$39y.7JoLr5A1no/jvjAsRGrBrYUufd43JVZiCPe8cHkz3M.ebOarMl/kc2QV3.sA8z7.4UvMzyJwCXcx7NYfz0'

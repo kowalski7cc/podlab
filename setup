@@ -2,7 +2,10 @@
 
 set -e
 
-. config
+ENVFILE="$(dirname $(realpath $0))/setenv"
+if [[ -f $ENVFILE ]]; then
+    . $ENVFILE
+fi
 
 if ! [ -x "$(command -v buildah)" ]; then
     echo "buildah is not installed" >&2
@@ -14,21 +17,42 @@ if ! [ -x "$(command -v ssh-keygen)" ]; then
     exit 1
 fi
 
+if [[ -d $(realpath $SSH_PATH) ]]; then
+    mkdir -p $(realpath $SSH_PATH)
+fi
 
-mkdir -p $(realpath $SSH_PATH)
 KEY_PATH="$(realpath $SSH_PATH)/$SSH_KEY_NAME"
 
 if [[ ! -f $KEY_PATH ]]; then
-  ssh-keygen -t $SSH_KEY_TYPE -f $KEY_PATH -C "ansible-lab key" -N ""
+    ssh-keygen -t $SSH_KEY_TYPE -f $KEY_PATH -C "ansible-lab key" -N ""
+    FORCE_REGENERATE=1 # If key has been created, we need to regenerate the container image
+fi
+
+if [[ -z $(podman network ls -f "name=$NETWORK" --format {{.ID}}) ]]; then
+    podman network create $NETWORK
 fi
 
 
-BUILDER=$(buildah from $BASE_IMAGE)
-buildah run $BUILDER dnf -y install basesystem bash systemd openssh-server passwd sudo python3 yum dnf findutils iproute NetworkManager iputils
-buildah run $BUILDER useradd ansible -rmG wheel
-buildah add --chown ansible:ansible --chmod 600 $BUILDER $KEY_PATH.pub /home/ansible/.ssh/authorized_keys
-buildah run $BUILDER sh -c 'echo -e "ansible ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers.d/ansible'
-buildah run $BUILDER useradd redhat -G wheel -p '$6$CoPu5pQehb0vQnWN$39y.7JoLr5A1no/jvjAsRGrBrYUufd43JVZiCPe8cHkz3M.ebOarMl/kc2QV3.sA8z7.4UvMzyJwCXcx7NYfz0'
-buildah run $BUILDER sh -c "echo -e PermitRootLogin yes >> /etc/ssh/sshd_config"
-buildah commit $BUILDER ansible-lab:base
-buildah rm $BUILDER
+
+if [[ -n $(buildah ps --filter=name=$NAME-working-container --format {{.ContainerID}}) ]]; then
+    # Recover a building image
+    if [[ $(buildah inspect --format '{{index .OCIv1.Config.Labels "org.ansible-lab.version"}}' $NAME-working-container) != $VERSION ]]; then
+        echo Builder version mismatch, please run \'buildah rm $NAME-working-container\'. >&2
+        exit 2
+    fi
+    BUILDER="$NAME-working-container"
+elif [[ -z $(podman image list --filter label=$LABEL.version=$VERSION --format {{.ID}}) ]]; then
+    BUILDER=$(buildah from --name "$NAME-working-container" $BASE_IMAGE)
+fi
+
+if [[ -n BUILDER ]]; then
+    buildah config --label "$LABEL.version=$VERSION" $BUILDER
+    buildah run $BUILDER dnf -y install basesystem bash systemd openssh-server passwd sudo python3 yum dnf findutils iproute NetworkManager iputils
+    buildah run $BUILDER useradd ansible -rmG wheel
+    buildah add --chown ansible:ansible --chmod 600 $BUILDER $KEY_PATH.pub /home/ansible/.ssh/authorized_keys
+    buildah run $BUILDER sh -c 'echo -e "ansible ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers.d/ansible'
+    buildah run $BUILDER useradd $STUDENT_USERNAME -G wheel -p $STUDENT_PASSWORD
+    buildah run $BUILDER sh -c "echo -e PermitRootLogin yes >> /etc/ssh/sshd_config"
+    buildah commit $BUILDER $IMAGE_NAME
+    buildah rm $BUILDER
+fi

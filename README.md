@@ -1,6 +1,6 @@
-# Ansible Lab
+# podLAB
 
-Build a simple lab ready for exercising with Ansible
+Build a simple lab using podman and systemd, ready for exercising with Ansible
 
 ## Requirements
 
@@ -19,7 +19,9 @@ First run `./setup`, then start pods with
 ./boot [group]
 ```
 
-and finally you can run your playbooks like
+You can use option `-a` to attach to the new container.
+
+Finally you can run your playbooks with:
 
 ```sh
 ansible-playbook ./playbooks/example.yml

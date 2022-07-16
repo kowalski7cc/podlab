@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+set -e
+
+ENVFILE="$(dirname $(realpath $0))/setenv"
+if [[ -f $ENVFILE ]]; then
+    . $ENVFILE
+fi
+
+VERBOSE=false
+
+while getopts ':hcv' OPTION; do
+    case "$OPTION" in
+        c)
+            CLEAN=1
+        ;;
+        
+        v)
+            VERBOSE=true
+        ;;
+        
+        h)
+            usage
+            exit 0
+        ;;
+        
+        ?)
+            usage
+            exit 1
+        ;;
+    esac
+done
+
+if ! [ -x "$(command -v podman)" ]; then
+    echo "podman is not installed" >&2
+    exit 1
+fi
+
+RUNNING_PODS=$(podman ps -a --filter=label=$LABEL.version --format {{.ID}})
+
+if [[ -n $RUNNING_PODS ]]; then
+    $VERBOSE && echo -n "Stopping containers... "
+    MSG=$(podman rm -f $RUNNING_PODS)
+    [[ $? -eq 0 ]] && $VERBOSE && echo OK || echo $MSG
+fi
+
+if [[ -n $CLEAN ]]; then
+    if [[ -n $(podman network ls -f "name=$NETWORK" --format {{.ID}}) ]]; then
+        $VERBOSE && echo -n "Removing network... "
+        podman network rm $NETWORK > /dev/null
+        [[ $? -eq 0 ]] && $VERBOSE && echo OK
+    fi
+
+    $VERBOSE && echo -n "Removing image... "
+    podman image rm $(podman image list --filter label=$LABEL.version=$VERSION --format {{.ID}}) > /dev/null
+    [[ $? -eq 0 ]] && $VERBOSE && echo OK
+fi

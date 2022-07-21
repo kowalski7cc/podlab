@@ -2,6 +2,8 @@
 
 set -e
 
+PACKAGES="basesystem bash systemd openssh-server passwd sudo python3 yum dnf findutils iproute NetworkManager iputils bind-utils procps-ng"
+
 ENVFILE="$(dirname $(realpath $0))/setenv"
 if [[ -f $ENVFILE ]]; then
     . $ENVFILE
@@ -29,30 +31,35 @@ if [[ ! -f $KEY_PATH ]]; then
 fi
 
 if [[ -z $(podman network ls -f "name=$NETWORK" --format {{.ID}}) ]]; then
-    podman network create $NETWORK
+    podman network create --label "$LABEL.version=$VERSION" $NETWORK
 fi
 
-
+unset BUILDER
 
 if [[ -n $(buildah ps --filter=name=$NAME-working-container --format {{.ContainerID}}) ]]; then
     # Recover a building image
-    if [[ $(buildah inspect --format '{{index .OCIv1.Config.Labels "org.ansible-lab.version"}}' $NAME-working-container) != $VERSION ]]; then
+    if [[ $(buildah inspect --format "{{index .OCIv1.Config.Labels \"$LABEL.version\"}}" $NAME-working-container) != $VERSION ]]; then
         echo Builder version mismatch, please run \'buildah rm $NAME-working-container\'. >&2
         exit 2
     fi
     BUILDER="$NAME-working-container"
-elif [[ -z $(podman image list --filter label=$LABEL.version=$VERSION --format {{.ID}}) ]]; then
-    BUILDER=$(buildah from --name "$NAME-working-container" $BASE_IMAGE)
+elif [[ -z $(podman image list --filter label=$LABEL.version=$VERSION --filter "label=$LABEL.packages=$PACKAGES" --format {{.ID}}) ]]; then
+    BUILDER=$(buildah from --name "$NAME-working-container" "$BASE_IMAGE")
 fi
 
-if [[ -n BUILDER ]]; then
-    buildah config --label "$LABEL.version=$VERSION" $BUILDER
-    buildah run $BUILDER dnf -y install basesystem bash systemd openssh-server passwd sudo python3 yum dnf findutils iproute NetworkManager iputils
-    buildah run $BUILDER useradd ansible -rmG wheel
+if [[ -n $BUILDER ]]; then
+    buildah config --label "$LABEL.version=$VERSION" \
+        --label "$LABEL.packages=$PACKAGES" \
+        --label "$LABEL.base=$BASE_IMAGE" \
+        --label "org.label-schema.name=$DISTRONAME" \
+        --label "org.label-schema.vendor=$NAME" \
+        $BUILDER
+    buildah run $BUILDER dnf -y install $PACKAGES
+    buildah run $BUILDER sh -c "id -u ansible &>/dev/null || useradd ansible -rmG wheel"
     buildah add --chown ansible:ansible --chmod 600 $BUILDER $KEY_PATH.pub /home/ansible/.ssh/authorized_keys
-    buildah run $BUILDER sh -c 'echo -e "ansible ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers.d/ansible'
-    buildah run $BUILDER useradd $STUDENT_USERNAME -G wheel -p $STUDENT_PASSWORD
+    buildah run $BUILDER sh -c 'mkdir -p /etc/sudoers.d/ && echo -e "ansible ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers.d/ansible'
+    buildah run $BUILDER sh -c "id -u $STUDENT_USERNAME &>/dev/null || useradd $STUDENT_USERNAME -G wheel -p $STUDENT_PASSWORD"
     buildah run $BUILDER sh -c "echo -e PermitRootLogin yes >> /etc/ssh/sshd_config"
-    buildah commit $BUILDER $IMAGE_NAME
+    buildah commit $BUILDER $IMAGE_NAME:$VERSION
     buildah rm $BUILDER
 fi

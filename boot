@@ -40,6 +40,8 @@ if ! [ -x "$(command -v podman)" ]; then
     exit 1
 fi
 
+
+
 if [ ! -z "$1" ]; then
     GROUP="$1"
 else
@@ -49,4 +51,4 @@ fi
 # TODO check if image is present before run
 
 LAST=$(podman ps -a --filter=label=$LABEL.group=$GROUP --format {{.Names}} | rev | cut --delimiter=- -f 1 | rev | sort -nr | head -n1)
-podman run --privileged $DETACH -ti --label "$LABEL.version=$VERSION" --label "$LABEL.group=$GROUP" --rm --name $NAME-$GROUP-$((LAST + 1)) --network $NETWORK --tmpfs /tmp --tmpfs /run $IMAGE_NAME /sbin/init
+podman run --privileged $DETACH -ti --label "$LABEL.version=$VERSION" --label "$LABEL.group=$GROUP" --rm --name $NAME-$GROUP-$((LAST + 1)) --hostname $NAME-$GROUP-$((LAST + 1)) --network $NETWORK --tmpfs /tmp --tmpfs /run $IMAGE_NAME:$VERSION /sbin/init

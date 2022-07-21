@@ -31,7 +31,7 @@ if [[ ! -f $KEY_PATH ]]; then
 fi
 
 if [[ -z $(podman network ls -f "name=$NETWORK" --format {{.ID}}) ]]; then
-    podman network create --label "$LABEL.version=$VERSION" $NETWORK
+    NET=`podman network create --label "$LABEL.version=$VERSION" $NETWORK`
 fi
 
 unset BUILDER
@@ -54,12 +54,13 @@ if [[ -n $BUILDER ]]; then
         --label "org.label-schema.name=$DISTRONAME" \
         --label "org.label-schema.vendor=$NAME" \
         $BUILDER
-    buildah run $BUILDER dnf -y install $PACKAGES
-    buildah run $BUILDER sh -c "id -u ansible &>/dev/null || useradd ansible -rmG wheel"
+    buildah run $BUILDER -- dnf -y install $PACKAGES
+    buildah run $BUILDER -- sh -c "id -u ansible &>/dev/null || useradd ansible -rmG wheel"
     buildah add --chown ansible:ansible --chmod 600 $BUILDER $KEY_PATH.pub /home/ansible/.ssh/authorized_keys
-    buildah run $BUILDER sh -c 'mkdir -p /etc/sudoers.d/ && echo -e "ansible ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers.d/ansible'
-    buildah run $BUILDER sh -c "id -u $STUDENT_USERNAME &>/dev/null || useradd $STUDENT_USERNAME -G wheel -p $STUDENT_PASSWORD"
-    buildah run $BUILDER sh -c "echo -e PermitRootLogin yes >> /etc/ssh/sshd_config"
+    buildah run $BUILDER -- sh -c 'mkdir -p /etc/sudoers.d/ && echo -e "ansible ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers.d/ansible'
+    buildah run $BUILDER -- useradd $STUDENT_USERNAME --groups wheel --password $STUDENT_PASSWORD
+    #buildah run $BUILDER -- useradd console --groups wheel --password ""
+    buildah run $BUILDER -- sh -c "echo -e PermitRootLogin yes >> /etc/ssh/sshd_config"
     buildah commit $BUILDER $IMAGE_NAME:$VERSION
     buildah rm $BUILDER
 fi

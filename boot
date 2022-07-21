@@ -40,6 +40,10 @@ if ! [ -x "$(command -v podman)" ]; then
     exit 1
 fi
 
+if [ -z `podman images $IMAGE_NAME:$VERSION --format {{.ID}}` ]; then
+    echo "Please run ./setup"
+    exit 2
+fi
 
 
 if [ ! -z "$1" ]; then

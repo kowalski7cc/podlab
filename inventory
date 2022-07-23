@@ -4,10 +4,13 @@ import argparse
 import json
 import subprocess
 
+# TODO: read from setenv
 UNGROUPED = "ungrouped"
 NETWORK = "podlab"
-LABEL = f"org.podlab.group"
+LABEL = f"org.podlab"
+DNS_SUFFIX = "dns.podman"
 
+USE_POD_IP = False
 
 def get_pods():
     pr = subprocess.run(
@@ -17,7 +20,7 @@ def get_pods():
             "--format",
             "{{.ID}}",
             "--filter",
-            f"label={LABEL}",
+            f"label={LABEL}.group",
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -29,13 +32,13 @@ def get_pods():
     return pr.stdout.decode().splitlines()
 
 
-def inspect_pod(hashes):
-    if not hashes:
+def inspect_pod(pods):
+    if not pods:
         return []
     pr = subprocess.run(
-        ["podman", "inspect", "--format", "json"] + hashes
-        if isinstance(hashes, list)
-        else [hashes],
+        ["podman", "inspect", "--format", "json"] + pods
+        if isinstance(pods, list)
+        else [pods],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=False,
@@ -51,17 +54,31 @@ def get_list(pods):
     # "Labels" "org.ansible-lab.group"
     groups = {}
     for p in pods:
-        g: str = p["Config"]["Labels"].get(LABEL, UNGROUPED)#.replace("-", "_")
+        g: str = p["Config"]["Labels"].get(
+            f"{LABEL}.group", UNGROUPED
+        )  # .replace("-", "_")
         if g not in groups:
             groups[g] = {"hosts": [], "vars": {}, "children": []}
         groups[g]["hosts"].append(
-            p["NetworkSettings"]["Networks"].get(NETWORK, {}).get("IPAddress", None)
+            # p["NetworkSettings"]["Networks"].get(NETWORK, {}).get("IPAddress", None)
+            f'{p["Config"]["Hostname"]}'
         )
     return groups
 
 
 def get_host(pod):
-    return "{}"
+    i = inspect_pod(pod)[0]
+    return json.dumps(
+        {
+            **({"ansible_host": i["NetworkSettings"]["Networks"]
+            .get(NETWORK, {})
+            .get("IPAddress", None)} if USE_POD_IP else {}),
+            # f'{i["Config"]["Hostname"]}.{DNS_SUFFIX}',
+            **(lambda v: {"podlab_version": v} if v else {})(
+                i["Config"]["Labels"].get("org.podlab.version", None)
+            )
+        }
+    )
 
 
 def main():
@@ -71,7 +88,7 @@ def main():
     args = parser.parse_args()
 
     if args.host:
-        print(get_host(args.host))
+        print(get_host([args.host]))
     if args.list:
         print(json.dumps(get_list(inspect_pod(get_pods()))))
 

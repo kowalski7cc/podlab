@@ -23,6 +23,11 @@ This script will generate an ssh-key pair, setup the podlab network and then dow
 
 - add podlab labels
 - install userful packages (see [Included Pakcages](#included-packages)) 
+- add ansible user
+- add ansible ssh key
+- allow ansible to sudo without password
+- add a student user
+- allow root login
 
 then start pods with the `boot` script, and you can set optionally the ansible gruop to which they will belong.
 

@@ -8,8 +8,8 @@ CheckHostIP no
 
 # Podman conatiner id
 Match exec "podman inspect %h --format {{.Config.Hostname}}"
-    ProxyCommand bash -c "nc $(podman inspect %h --format \"{{.NetworkSettings.Networks.podlab.IPAddress}}\") %p"
+    ProxyCommand bash -c "nc $(podman inspect %h --format {{.NetworkSettings.Networks.podlab.IPAddress}}) %p"
 
 # Podlab hostname
 Match host podlab-*-*
-    ProxyCommand bash -c "nc $(podman inspect %h --format \"{{.NetworkSettings.Networks.podlab.IPAddress}}\") %p"
+    ProxyCommand bash -c "nc $(podman inspect %h --format {{.NetworkSettings.Networks.podlab.IPAddress}}) %p"

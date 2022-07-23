@@ -12,5 +12,5 @@
 
 
 #ssh -F ssh_config $@
-
+[ $# -eq 0 ] && ssh || exit $?
 podman unshare --rootless-cni ssh -F ssh_config $@

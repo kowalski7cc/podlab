@@ -1,11 +1,3 @@
-CanonicalizeHostname no
-CanonicalDomains dns.podman
-UserKnownHostsFile /dev/null
-StrictHostKeyChecking no
-IdentitiesOnly yes
-StrictHostKeyChecking no
-CheckHostIP no
-
 # Podman conatiner id
 Match exec "podman inspect %h --format {{.Config.Hostname}}"
     ProxyCommand bash -c "nc $(podman inspect %h --format {{.NetworkSettings.Networks.podlab.IPAddress}}) %p"
@@ -13,3 +5,12 @@ Match exec "podman inspect %h --format {{.Config.Hostname}}"
 # Podlab hostname
 Match host podlab-*-*
     ProxyCommand bash -c "nc $(podman inspect %h --format {{.NetworkSettings.Networks.podlab.IPAddress}}) %p"
+
+Host *
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+    CanonicalizeHostname no
+    CanonicalDomains dns.podman
+    IdentitiesOnly yes
+    CheckHostIP no
+    LogLevel ERROR

@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+[ $# -eq 0 ] && echo $0 container_name host_port:guest_port[/protocol] && exit 0
+
+HOST_ADDRESS="127.0.0.1"
+HOST_PORT=${2%:*}
+GUEST_ADDRESS=`podman inspect --format {{.NetworkSettings.Networks.podlab.IPAddress}} "$1"`
+GUEST_PORT=${2##*:} GUEST_PORT=${GUEST_PORT%/*}
+PROTOCOL=${2##*/} PROTOCOL=${PROTOCOL,,}
+
+print_forward_message() {
+    echo "Forwarding with $1 from $2:$3 -> $4"
+}
+
+if [ -x "$(command -v socat)" ]; then
+    print_forward_message "socat" $HOST_ADDRESS $HOST_PORT $GUEST_PORT
+    socat -t -- TCP-LISTEN:$HOST_PORT,reuseaddr,fork EXEC:"podman unshare --rootless-cni socat -t -- STDIN TCP4\:$GUEST_ADDRESS\:$GUEST_PORT"
+    exit 0
+fi
+
+if [ -x "$(command -v ncat)" ]; then
+    print_forward_message "ncat" $HOST_ADDRESS $HOST_PORT $GUEST_PORT
+    ncat -k -l $HOST_ADDRESS $HOST_PORT --sh-exec "podman unshare --rootless-cni ncat $GUEST_ADDRESS $GUEST_PORT"
+    exit 0
+fi
+
+if [ -x "$(command -v netcat)" ]; then
+    TMP=`mktemp -d`
+    trap "rm -rf $TMP" EXIT
+    FIFO="$TMP/`dbus-uuidgen`"
+    mkfifo $FIFO
+    print_forward_message "netcat (experimental)" $HOST_ADDRESS $HOST_PORT $GUEST_PORT
+    nc -kl $HOST_ADDRESS $HOST_PORT < $FIFO | podman unshare --rootless-cni nc $GUEST_ADDRESS $GUEST_PORT > $FIFO
+    rm -rf $TMP
+    exit 0
+fi
+
+echo "You need to install one of ncat, socat or netcat"

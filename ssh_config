@@ -1,10 +1,10 @@
 # Podman conatiner id
-Match exec "podman inspect %h --format {{.Config.Hostname}}"
-    ProxyCommand bash -c "nc $(podman inspect %h --format {{.NetworkSettings.Networks.podlab.IPAddress}}) %p"
+Match exec "podman inspect --format {{.Config.Hostname}} %h"
+    ProxyCommand bash -c "nc $(podman inspect --format {{.NetworkSettings.Networks.podlab.IPAddress}} %h) %p"
 
 # Podlab hostname
 Match host podlab-*-*
-    ProxyCommand bash -c "nc $(podman inspect %h --format {{.NetworkSettings.Networks.podlab.IPAddress}}) %p"
+    ProxyCommand bash -c "nc $(podman inspect --format {{.NetworkSettings.Networks.podlab.IPAddress}} %h) %p"
 
 Host *
     StrictHostKeyChecking no

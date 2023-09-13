@@ -1,16 +1,5 @@
 #!/usr/bin/env bash
-
-#podman unshare --rootless-cni ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $@ # -i keys/ansible_ed25519 -o User=ansible  $@
-#podman run --rm -it --network podlab podlab:1.0.1 ssh $@
-
+set -e
 . setenv
-
-# Start bastion pod
-# if [[ -z $(podman container list -a -f "name=$NAME-infra-bastion" --format {{.ID}}) ]]; then
-#     POD=`podman run -d --rm --label "$LABEL.infra=bastion" --network $NETWORK --name $NAME-infra-bastion -p 127.0.0.1:2222:22 $IMAGE_NAME:$VERSION sh -c "ssh-keygen -A; /usr/sbin/sshd -D"`
-# fi
-
-
-#ssh -F ssh_config $@
 [ $# -eq 0 ] && (ssh; exit $)
-podman unshare --rootless-cni ssh -F ssh_config $@
+podman unshare --rootless-cni ssh -F .ssh/config $@

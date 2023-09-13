@@ -12,6 +12,7 @@ DNS_SUFFIX = "dns.podman"
 
 USE_POD_IP = False
 
+
 def get_pods():
     pr = subprocess.run(
         [
@@ -70,13 +71,19 @@ def get_host(pod):
     i = inspect_pod(pod)[0]
     return json.dumps(
         {
-            **({"ansible_host": i["NetworkSettings"]["Networks"]
-            .get(NETWORK, {})
-            .get("IPAddress", None)} if USE_POD_IP else {}),
+            **(
+                {
+                    "ansible_host": i["NetworkSettings"]["Networks"]
+                    .get(NETWORK, {})
+                    .get("IPAddress", None)
+                }
+                if USE_POD_IP
+                else {}
+            ),
             # f'{i["Config"]["Hostname"]}.{DNS_SUFFIX}',
             **(lambda v: {"podlab_version": v} if v else {})(
                 i["Config"]["Labels"].get("org.podlab.version", None)
-            )
+            ),
         }
     )
 

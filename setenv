@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 
+set -e
 
 NAME="podlab"
-VERSION="1.1.0"
+VERSION="1.2.0"
 LABEL="org.$NAME"
 IMAGE_NAME="$NAME"
 NETWORK="$NAME"
 DISTRONAME="podLAB pod image"
+# Other tested images: "fedora:38"
 BASE_IMAGE="quay.io/centos/centos:stream9"
-#BASE_IMAGE="fedora"
 
 SSH_KEY_NAME="ansible_ed25519"
 SSH_KEY_TYPE="ed25519"
-SSH_PATH="ssh"
+SSH_PATH=".ssh"
 
-STUDENT_USERNAME='redhat'
-STUDENT_PASSWORD='$6$CoPu5pQehb0vQnWN$39y.7JoLr5A1no/jvjAsRGrBrYUufd43JVZiCPe8cHkz3M.ebOarMl/kc2QV3.sA8z7.4UvMzyJwCXcx7NYfz0'
+STUDENT_USERNAME='student'
+STUDENT_PASSWORD='student'

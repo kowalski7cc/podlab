@@ -4,17 +4,30 @@ set -e
 ENVFILE="$(dirname $(realpath $0))/setenv"
 if [[ -f $ENVFILE ]]; then
     . $ENVFILE
+else
+    echo "Environment file not found: $ENVFILE"
+    exit 1
 fi
 
-usage() { echo "$0 usage: $0 [-a] [-h] [GROUP]"; }
+usage() { echo "$0 usage: $0 [-a] [-p] [-h] [GROUP NAME]"; }
+usage_long() {
+    echo "  -a  attach to container"
+    echo "  -p  persist container"
+    echo "  -h  show this help"
+}
 
 #[ $# -eq 0 ] && usage && exit 0
 DETACH='-d'
+REMOVE='--rm'
 
-while getopts ':hav' OPTION; do
+while getopts ':hapv' OPTION; do
     case "$OPTION" in
         a)
             DETACH=''
+        ;;
+        
+        p)
+            REMOVE=''
         ;;
         
         v)
@@ -23,6 +36,7 @@ while getopts ':hav' OPTION; do
         
         h)
             usage
+            usage_long
             exit 0
         ;;
         
@@ -55,4 +69,4 @@ fi
 # TODO check if image is present before run
 
 LAST=$(podman ps -a --filter=label=$LABEL.group=$GROUP --format {{.Names}} | rev | cut --delimiter=- -f 1 | rev | sort -nr | head -n1)
-podman run --privileged $DETACH -ti --label "$LABEL.version=$VERSION" --label "$LABEL.group=$GROUP" --rm --name $NAME-$GROUP-$((LAST + 1)) --hostname $NAME-$GROUP-$((LAST + 1)) --network $NETWORK --tmpfs /tmp --tmpfs /run $IMAGE_NAME:$VERSION /sbin/init
+podman run --privileged $DETACH $REMOVE -ti --label "$LABEL.version=$VERSION" --label "$LABEL.group=$GROUP" --rm --name $NAME-$GROUP-$((LAST + 1)) --hostname $NAME-$GROUP-$((LAST + 1)) --network $NETWORK --tmpfs /tmp --tmpfs /run $IMAGE_NAME:$VERSION /sbin/init

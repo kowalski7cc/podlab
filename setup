@@ -2,7 +2,7 @@
 
 set -e
 
-PACKAGES="basesystem bash systemd openssh-server passwd sudo python3 yum dnf findutils iproute NetworkManager iputils bind-utils procps-ng openssh-clients nc at hostname acl xz zip info wget bzip2 file ed nano quota less which strace symlinks tcpdump time tree jq  pinfo vim-enhanced words util-linux-user"
+PACKAGES="basesystem whois mkpasswd ncurses bash systemd openssh-server passwd sudo python3 yum dnf findutils iproute NetworkManager iputils bind-utils procps-ng openssh-clients nc at hostname acl xz zip info wget bzip2 file ed nano quota less which strace symlinks tcpdump time tree jq  pinfo vim-enhanced words util-linux-user rhel-system-roles"
 
 ENVFILE="$(dirname $(realpath $0))/setenv"
 if [[ -f $ENVFILE ]]; then
@@ -43,24 +43,25 @@ if [[ -n $(buildah ps --filter=name=$NAME-working-container --format {{.Containe
         exit 2
     fi
     BUILDER="$NAME-working-container"
-elif [[ -z $(podman image list --filter label=$LABEL.version=$VERSION --filter "label=$LABEL.packages=$PACKAGES" --format {{.ID}}) ]]; then
+    elif [[ -z $(podman image list --filter label=$LABEL.version=$VERSION --filter "label=$LABEL.packages=$PACKAGES" --format {{.ID}}) ]]; then
     BUILDER=$(buildah from --name "$NAME-working-container" "$BASE_IMAGE")
 fi
 
+
 if [[ -n $BUILDER ]]; then
     buildah config --label "$LABEL.version=$VERSION" \
-        --label "$LABEL.packages=$PACKAGES" \
-        --label "$LABEL.base=$BASE_IMAGE" \
-        --label "org.label-schema.name=$DISTRONAME" \
-        --label "org.label-schema.vendor=$NAME" \
-        $BUILDER
+    --label "$LABEL.packages=$PACKAGES" \
+    --label "$LABEL.base=$BASE_IMAGE" \
+    --label "org.label-schema.name=$DISTRONAME" \
+    --label "org.label-schema.vendor=$NAME" \
+    $BUILDER
     buildah run $BUILDER -- dnf -y install $PACKAGES
     buildah run $BUILDER -- sh -c "id -u ansible &>/dev/null || useradd ansible -rmG wheel"
     buildah add --chown ansible:ansible --chmod 600 $BUILDER $KEY_PATH.pub /home/ansible/.ssh/authorized_keys
     buildah run $BUILDER -- sh -c 'mkdir -p /etc/sudoers.d/ && echo -e "ansible ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers.d/ansible'
-    buildah run $BUILDER -- useradd $STUDENT_USERNAME --groups wheel --password $STUDENT_PASSWORD
-    #buildah run $BUILDER -- useradd console --groups wheel --password ""
+    buildah run $BUILDER -- sh -c "useradd $STUDENT_USERNAME --groups wheel --password \`mkpasswd $STUDENT_PASSWORD\`"
     buildah run $BUILDER -- sh -c "echo -e PermitRootLogin yes >> /etc/ssh/sshd_config"
+    buildah run $BUILDER -- sh -c "rm -rf /var/cache/dnf/"
     buildah commit $BUILDER $IMAGE_NAME:$VERSION
     buildah rm $BUILDER
 fi

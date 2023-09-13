@@ -9,6 +9,14 @@ fi
 
 VERBOSE=false
 
+usage() { echo "$0 usage: $0 [-c] [-v] [-h] [GROUP NAME]"; }
+usage_long() {
+    echo "  -c  clean up everything, including images and networks"
+    echo "  -v  enable verbose output"
+    echo "  -h  show this help"
+}
+
+
 while getopts ':hcv' OPTION; do
     case "$OPTION" in
         c)
@@ -21,11 +29,13 @@ while getopts ':hcv' OPTION; do
         
         h)
             usage
+            usage_long
             exit 0
         ;;
         
         ?)
             usage
+            usage_long
             exit 1
         ;;
     esac
@@ -50,7 +60,7 @@ if [[ -n $CLEAN ]]; then
         podman network rm $NETWORK > /dev/null
         [[ $? -eq 0 ]] && $VERBOSE && echo OK
     fi
-
+    
     $VERBOSE && echo -n "Removing image... "
     podman image rm $(podman image list --filter label=$LABEL.version=$VERSION --format {{.ID}}) > /dev/null
     [[ $? -eq 0 ]] && $VERBOSE && echo OK

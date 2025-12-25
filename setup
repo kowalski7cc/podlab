@@ -2,7 +2,7 @@
 
 set -e
 
-PACKAGES="basesystem lsof whois mkpasswd ncurses bash systemd openssh-server passwd sudo python3 yum dnf findutils iproute NetworkManager iputils bind-utils procps-ng openssh-clients nc at hostname acl xz zip info wget bzip2 file ed nano quota less which strace symlinks tcpdump time tree jq vim-enhanced words util-linux-user rhel-system-roles"
+PACKAGES="basesystem lsof whois mkpasswd ncurses bash systemd openssh-server passwd sudo python3 yum dnf findutils iproute NetworkManager iputils bind-utils procps-ng openssh-clients nc at hostname acl xz zip info wget bzip2 file ed nano quota less which strace symlinks tcpdump time tree jq vim-enhanced words util-linux-user rhel-system-roles firewalld"
 
 ENVFILE="$(dirname $(realpath $0))/setenv"
 if [[ -f $ENVFILE ]]; then

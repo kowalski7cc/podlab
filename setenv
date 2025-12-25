@@ -9,7 +9,7 @@ IMAGE_NAME="$NAME"
 NETWORK="$NAME"
 DISTRONAME="podLAB pod image"
 # Other tested images: "fedora:38"
-BASE_IMAGE="quay.io/centos/centos:stream10"
+BASE_IMAGE="quay.io/centos/centos:stream9"
 
 SSH_KEY_NAME="ansible_ed25519"
 SSH_KEY_TYPE="ed25519"

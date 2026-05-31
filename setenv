@@ -7,13 +7,14 @@ VERSION="1.2.1"
 LABEL="org.$NAME"
 IMAGE_NAME="$NAME"
 NETWORK="$NAME"
-DISTRONAME="podLAB pod image"
+DISTRONAME="Podlab pod image"
 # Other tested images: "fedora:38"
-BASE_IMAGE="quay.io/centos/centos:stream9"
+BASE_IMAGE="quay.io/centos/centos:stream10"
+PACKAGES="basesystem lsof whois mkpasswd ncurses bash bash-color-prompt bash-completion systemd openssh-server passwd sudo python3 yum dnf findutils iproute NetworkManager iputils bind-utils procps-ng openssh-clients nc at hostname acl xz zip info wget bzip2 file ed nano quota less which strace symlinks tcpdump time tree jq vim-enhanced words util-linux-user rhel-system-roles firewalld dbus crontabs util-linux"
 
-SSH_KEY_NAME="ansible_ed25519"
+SSH_KEY_NAME="podlab_ansible_ed25519"
 SSH_KEY_TYPE="ed25519"
-SSH_PATH=".ssh"
+SSH_PATH="$HOME/.ssh"
 
 STUDENT_USERNAME='student'
 STUDENT_PASSWORD='student'

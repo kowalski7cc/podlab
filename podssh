@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-set -e
-. setenv
-[ $# -eq 0 ] && (ssh; exit $)
-podman unshare --rootless-cni ssh -F .ssh/config $@

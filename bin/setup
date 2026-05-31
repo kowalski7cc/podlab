@@ -2,12 +2,7 @@
 
 set -e
 
-PACKAGES="basesystem lsof whois mkpasswd ncurses bash systemd openssh-server passwd sudo python3 yum dnf findutils iproute NetworkManager iputils bind-utils procps-ng openssh-clients nc at hostname acl xz zip info wget bzip2 file ed nano quota less which strace symlinks tcpdump time tree jq vim-enhanced words util-linux-user rhel-system-roles firewalld"
-
-ENVFILE="$(dirname $(realpath $0))/setenv"
-if [[ -f $ENVFILE ]]; then
-    . $ENVFILE
-fi
+. "$PODLAB_BASE"/setenv
 
 if ! [ -x "$(command -v buildah)" ]; then
     echo "buildah is not installed" >&2
@@ -45,23 +40,25 @@ if [[ -n $(buildah ps --filter=name=$NAME-working-container --format {{.Containe
     BUILDER="$NAME-working-container"
     elif [[ -z $(podman image list --filter label=$LABEL.version=$VERSION --filter "label=$LABEL.packages=$PACKAGES" --format {{.ID}}) ]]; then
     BUILDER=$(buildah from --name "$NAME-working-container" "$BASE_IMAGE")
+    echo Builder image "$BUILDER"
 fi
 
 
-if [[ -n $BUILDER ]]; then
+if [[ -n "$BUILDER" ]]; then
     buildah config --label "$LABEL.version=$VERSION" \
     --label "$LABEL.packages=$PACKAGES" \
     --label "$LABEL.base=$BASE_IMAGE" \
     --label "org.label-schema.name=$DISTRONAME" \
     --label "org.label-schema.vendor=$NAME" \
-    $BUILDER
-    buildah run $BUILDER -- dnf -y install $PACKAGES
-    buildah run $BUILDER -- sh -c "id -u ansible &>/dev/null || useradd ansible -rmG wheel"
-    buildah add --chown ansible:ansible --chmod 600 $BUILDER $KEY_PATH.pub /home/ansible/.ssh/authorized_keys
-    buildah run $BUILDER -- sh -c 'mkdir -p /etc/sudoers.d/ && echo -e "ansible ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers.d/ansible'
-    buildah run $BUILDER -- sh -c "useradd $STUDENT_USERNAME --groups wheel --password \`mkpasswd $STUDENT_PASSWORD\`"
-    buildah run $BUILDER -- sh -c "echo -e PermitRootLogin yes >> /etc/ssh/sshd_config"
-    buildah run $BUILDER -- sh -c "rm -rf /var/cache/dnf/"
-    buildah commit $BUILDER $IMAGE_NAME:$VERSION
-    buildah rm $BUILDER
+    "$BUILDER"
+    # buildah run "$BUILDER" -- dnf group install "Minimal Install" -y --allowerasing
+    buildah run "$BUILDER" -- dnf -y install $PACKAGES
+    buildah run "$BUILDER" -- sh -c "id -u ansible &>/dev/null || useradd ansible -rmG wheel"
+    buildah add --chown ansible:ansible --chmod 600 "$BUILDER" $KEY_PATH.pub /home/ansible/.ssh/authorized_keys
+    buildah run "$BUILDER" -- sh -c 'mkdir -p /etc/sudoers.d/ && echo -e "ansible ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers.d/ansible'
+    buildah run "$BUILDER" -- sh -c "useradd $STUDENT_USERNAME --groups wheel --password \`mkpasswd $STUDENT_PASSWORD\`"
+    buildah run "$BUILDER" -- sh -c "echo -e PermitRootLogin yes >> /etc/ssh/sshd_config"
+    buildah run "$BUILDER" -- sh -c "mkdir -p /etc/systemd/system/multi-user.target.wants/ && ln -sf /usr/lib/systemd/system/container-getty@.service /etc/systemd/system/multi-user.target.wants/container-getty@0.service"
+    buildah commit "$BUILDER" "$IMAGE_NAME:$VERSION"
+    buildah rm "$BUILDER"
 fi

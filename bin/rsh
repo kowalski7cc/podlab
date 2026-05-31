@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -e
+
+. "$(dirname $(realpath $0))/setenv"
+
+# Initialize flags
+DO_AUTOLOGIN=0
+USER=$STUDENT_USERNAME
+
+while getopts ':hapvu:' OPTION; do
+    case "$OPTION" in
+        a)
+            DO_AUTOLOGIN=1
+        ;;
+        u)
+            DO_AUTOLOGIN=1
+            USER=$OPTARG
+        ;;
+        h)
+            usage
+            exit 0
+        ;;
+        ?)
+            usage
+            exit 1
+        ;;
+    esac
+done
+
+shift $((OPTIND-1))
+
+if [ $# -eq 0 ]; then
+    echo "Pod name is required"
+    exit 1
+fi
+
+POD_NAME=$1
+
+AUTOLOGIN_ARGS=""
+if [[ $DO_AUTOLOGIN -eq 1 ]]; then
+  AUTOLOGIN_ARGS="--autologin $USER"
+fi
+
+podman exec -it "$POD_NAME" agetty $AUTOLOGIN_ARGS - "${TERM}"

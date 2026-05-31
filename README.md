@@ -1,4 +1,4 @@
-# podLAB
+# Podlab
 
 Build a simple lab using podman and systemd, ready for exercising with Ansible, inspired by [@mrjackv](https://github.com/mrjackv) ansible-nspawn
 
@@ -16,7 +16,7 @@ Build a simple lab using podman and systemd, ready for exercising with Ansible, 
 First run the `setup`
 
 ```shell
-./setup
+./podlab setup
 ```
 
 This script will generate an ssh-key pair, setup the podlab network and then download a `centos:stream9` image and perform the following steps on it:
@@ -32,7 +32,7 @@ This script will generate an ssh-key pair, setup the podlab network and then dow
 then start pods with the `boot` script, and you can set optionally the ansible gruop to which they will belong.
 
 ```shell
-./boot [group]
+./podlab boot [group]
 ```
 
 You can also use the option `-a` to attach directly to the new container.
@@ -40,13 +40,13 @@ You can also use the option `-a` to attach directly to the new container.
 Finally you can run your playbooks like this:
 
 ```shell
-ansible-playbook ./playbooks/example.yml
+./podlab ansible-playbook ./playbooks/example.yml
 ```
 
 After you're done excercising, you can stop the lab with the command
 
 ```shell
-./shutdown
+./podlab shutdown
 ```
 
 You can also use the `-c` option to delete the image and the network. They will be created again next time tou run the `setup` script 
@@ -84,49 +84,7 @@ A quick look at the files and directories included in podlab
 
 ## Included packages
 
-```
-- basesystem
-- bash
-- systemd
-- openssh-server
-- passwd
-- sudo
-- python3
-- yum
-- dnf
-- findutils
-- iproute
-- NetworkManager
-- iputils
-- bind-utils
-- procps-ng
-- openssh-clients
-- nc
-- at
-- hostname
-- acl
-- xz
-- zip
-- info
-- wget
-- bzip2
-- file
-- ed
-- nano
-- quota
-- less
-- which
-- strace
-- symlinks
-- tcpdump
-- time
-- tree
-- jq
-- pinfo
-- vim-enhanced
-- words
-- util-linux-user
-```
+TBD
 
 ## License
 

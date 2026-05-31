@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-[ $# -eq 0 ] && echo $0 container_name host_port:guest_port[/protocol] && exit 1
+[ $# -eq 0 ] && echo Usage: $(basename "$0") container_name host_port:guest_port[/protocol] && exit 1
 
 HOST_ADDRESS="127.0.0.1"
 HOST_PORT=${2%:*}
@@ -35,5 +35,5 @@ if [ -x "$(command -v netcat)" ]; then
     exit 0
 fi
 
-echo "You need to install one of ncat, socat or netcat"
+echo "You need to install one of socat, ncat or netcat"
 exit 2

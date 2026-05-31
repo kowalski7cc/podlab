@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -e
+[ $# -eq 0 ] && (echo "Missing command"; exit 1)
+COMMAND=$1; shift
+export PODLAB_BASE="$(dirname $(realpath $0))"
+. "$PODLAB_BASE"/bin/"$COMMAND" "$@"

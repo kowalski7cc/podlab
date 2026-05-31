@@ -69,4 +69,4 @@ fi
 # TODO check if image is present before run
 
 LAST=$(podman ps -a --filter=label=$LABEL.group=$GROUP --format {{.Names}} | rev | cut --delimiter=- -f 1 | rev | sort -nr | head -n1)
-podman run --privileged $DETACH $REMOVE -ti --label "$LABEL.version=$VERSION" --label "$LABEL.group=$GROUP" --rm --name $NAME-$GROUP-$((LAST + 1)) --hostname $NAME-$GROUP-$((LAST + 1)) --network $NETWORK --tmpfs /tmp --tmpfs /run $IMAGE_NAME:$VERSION /sbin/init
+podman run --privileged $DETACH $REMOVE -ti --label "$LABEL.version=$VERSION" --label "$LABEL.group=$GROUP" --rm --name $NAME-$GROUP-$((LAST + 1)) --systemd=always --hostname $NAME-$GROUP-$((LAST + 1)) --network $NETWORK $IMAGE_NAME:$VERSION /sbin/init

@@ -2,11 +2,7 @@
 
 set -e
 
-ENVFILE="$(dirname $(realpath $0))/setenv"
-if [[ -f $ENVFILE ]]; then
-    . $ENVFILE
-fi
-
+. "$PODLAB_BASE"/setenv
 VERBOSE=false
 
 usage() { echo "$0 usage: $0 [-c] [-v] [-h] [GROUP NAME]"; }

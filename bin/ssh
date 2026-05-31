@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -e
+. "$PODLAB_BASE"/setenv
+[ $# -eq 0 ] && (ssh; exit $)
+podman unshare --rootless-cni ssh -F "$PODLAB_BASE/ssh_config" $@
